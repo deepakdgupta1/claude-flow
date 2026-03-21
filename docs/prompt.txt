@@ -1,0 +1,180 @@
+Paste this into the fresh thread:
+
+```text
+You are working in `/home/deeog/Desktop/claude-flow`.
+
+Your task is to create a fresh, ground-up documentation corpus for this repository without relying on the existing `docs/modules/` version. This is a large-scope documentation exercise, so you must aggressively use sub-agents to keep context windows small and focused. Do not try to hold the whole repo in one agent’s context.
+
+Hard constraints:
+- Treat `docs/modules/` as a parallel documentation version to ignore.
+- Do not read from `docs/modules/` as source material.
+- Do not edit, delete, move, or link to `docs/modules/`.
+- If `docs/modules/` contains untracked files, leave them untouched.
+- Build the new corpus from code, tests, manifests, ADRs, package READMEs, and historical docs outside `docs/modules/`.
+- When docs and implementation disagree, implementation wins and the docs must call out the drift explicitly.
+- The new corpus must stand on its own and be diff-friendly against `docs/modules/` later.
+
+Primary output locations:
+- `docs/README.md`
+- `docs/architecture/README.md`
+- `docs/architecture/repository-map.md`
+- `docs/architecture/v3-core-runtime.md`
+- `docs/architecture/v3-surfaces-and-operations.md`
+- `docs/architecture/v3-security-governance.md`
+- `docs/architecture/v3-plugin-ecosystem.md`
+- `docs/architecture/v2-legacy-architecture.md`
+- `docs/architecture/version-evolution-and-migration.md`
+- `docs/architecture/auxiliary-assets-and-harnesses.md`
+
+Required compatibility bridge pages:
+- `v3/docs/README.md`
+- `v3/docs/guides/README.md`
+- `v3/docs/implementation/README.md`
+
+Known repo facts you should verify early:
+- Root package publishes the v3 CLI via `package.json` pointing at `v3/@claude-flow/cli/bin/cli.js`.
+- The repo spans root, `v2`, `v3`, `v3/@claude-flow/*`, `v3/plugins/*`, `.claude`, `.claude-plugin`, `plugin/`, `.github`, `.githooks`, `tests/docker-regression`, and `docs/ruvector-postgres`.
+- `v3/README.md` currently links to missing `v3/docs/README.md`, `v3/docs/guides/`, and `v3/docs/implementation/`.
+- `docs/modules/` may already exist in the worktree; ignore it completely.
+
+Documentation design requirements:
+- `docs/README.md` is the repo-level entrypoint.
+- `docs/architecture/README.md` is the master narrative covering what Claude Flow is, target use cases, architecture layers, request lifecycle, and how to navigate the corpus.
+- Each technical document must use this schema:
+  - Purpose
+  - Status
+  - Covered Areas
+  - Key Entry Points
+  - How It Works
+  - Why It Is Designed This Way
+  - Dependencies
+  - Operational/Test Notes
+  - Known Drift
+  - Related Docs
+- Apply explicit status labels everywhere: `active`, `legacy`, `experimental`, `supporting asset`, or `historical/unverified`.
+- Use Mermaid only where it materially improves clarity. Otherwise prefer compact tables and ASCII maps.
+- Add `Last updated: 2026-03-21` to every new doc.
+- Use relative markdown links within the repo.
+
+Very important delegation requirement:
+- You must spawn multiple sub-agents with disjoint scopes and disjoint write ownership.
+- Keep the main agent context lean. The main agent should not read broad swaths of every subsystem itself once delegation starts.
+- Use explorer/read-only sub-agents first for inventory and bounded analysis.
+- Use worker sub-agents next for writing specific docs.
+- After workers finish, the main agent integrates, validates, and fixes cross-linking.
+- Do not duplicate work between the main agent and sub-agents.
+
+Recommended agent structure:
+
+Phase 1: Read-only inventory via explorers
+1. Spawn `Explorer-V3` with a narrow brief:
+   - Inventory `v3/@claude-flow/*`, `v3/plugins/*`, `v3/src`, `v3/index.ts`, `v3/package.json`, `v3/pnpm-workspace.yaml`, `v3/README.md`, `v3/implementation/adrs/*`.
+   - Produce a compact summary of packages, plugins, key entrypoints, and broken `v3/docs/*` links.
+   - Do not write files.
+2. Spawn `Explorer-V2` with a narrow brief:
+   - Inventory `v2/src`, `v2/package.json`, `v2/README.md`, `v2/docs/architecture/*`, `v2/src/mcp/*`, `v2/src/swarm/*`, `v2/src/providers/*`, `v2/src/verification/*`, `v2/src/migration/*`.
+   - Produce a compact summary of major legacy subsystems and migration-relevant facts.
+   - Do not write files.
+3. Spawn `Explorer-Support` with a narrow brief:
+   - Inventory `.claude`, `.claude-plugin`, `plugin/`, `agents/`, `.github`, `.githooks`, `scripts/`, `tests/docker-regression`, `docs/ruvector-postgres`.
+   - Produce a compact summary of support/operational assets and their roles.
+   - Do not write files.
+
+Phase 2: Writing via workers with disjoint ownership
+4. Spawn `Worker-V3-Core` with ownership of:
+   - `docs/architecture/v3-core-runtime.md`
+   - Source focus: `shared`, `swarm`, `memory`, `integration`, `neural`, `v3/index.ts`, `v3/src`
+   - Do not touch any other files.
+5. Spawn `Worker-V3-Surfaces` with ownership of:
+   - `docs/architecture/v3-surfaces-and-operations.md`
+   - Source focus: `cli`, `mcp`, `hooks`, `providers`, `embeddings`, `browser`, `testing`, `performance`, `deployment`
+   - Do not touch any other files.
+6. Spawn `Worker-V3-Security` with ownership of:
+   - `docs/architecture/v3-security-governance.md`
+   - Source focus: `security`, `aidefence`, `claims`, execution controls, governance/security posture
+   - Do not touch any other files.
+7. Spawn `Worker-V3-Plugins` with ownership of:
+   - `docs/architecture/v3-plugin-ecosystem.md`
+   - Source focus: `@claude-flow/plugins` SDK plus all shipped `v3/plugins/*`
+   - Group plugins by function/domain rather than writing a huge unstructured list.
+   - Do not touch any other files.
+8. Spawn `Worker-V2-Legacy` with ownership of:
+   - `docs/architecture/v2-legacy-architecture.md`
+   - Source focus: v2 core/orchestration, CLI, MCP, swarm/hive-mind, providers, memory/reasoningbank/AgentDB, verification, enterprise, migration
+   - Do not touch any other files.
+9. Spawn `Worker-Support` with ownership of:
+   - `docs/architecture/auxiliary-assets-and-harnesses.md`
+   - Source focus: `.claude`, `.claude-plugin`, `plugin/`, root `agents/`, `.github`, `.githooks`, root scripts, `tests/docker-regression`, `docs/ruvector-postgres`
+   - Do not touch any other files.
+
+Phase 3: Main-agent integration and top-level docs
+10. The main agent owns:
+- `docs/README.md`
+- `docs/architecture/README.md`
+- `docs/architecture/repository-map.md`
+- `docs/architecture/version-evolution-and-migration.md`
+- `v3/docs/README.md`
+- `v3/docs/guides/README.md`
+- `v3/docs/implementation/README.md`
+
+11. Main-agent responsibilities:
+- Synthesize explorer outputs and worker drafts.
+- Create the top-level navigation and master narrative.
+- Build the repository-wide coverage matrix.
+- Write the version-evolution/migration doc.
+- Create the three `v3/docs/*` bridge pages so current `v3/README.md` links stop pointing at missing pages.
+- Ensure the fresh corpus never references `docs/modules/`.
+
+Coverage requirements:
+- Every top-level repo area must appear in at least one table.
+- Every `v3/@claude-flow/*` package must appear in at least one table.
+- Every shipped `v3/plugins/*` plugin must appear in at least one table.
+- Every major `v2/src` subsystem must appear in at least one table.
+- Support assets and operational surfaces must be covered: `.claude`, `.claude-plugin`, `plugin/`, `agents/`, `.github`, `.githooks`, `scripts/`, `tests/docker-regression`, `docs/ruvector-postgres`.
+
+Working rules:
+- Prefer `rg` for search and `find` for inventory.
+- Exclude `docs/modules/**` from searches whenever practical.
+- Do not let workers read or write outside their owned scope unless absolutely necessary.
+- Do not overwrite user work.
+- Use `apply_patch` for all manual edits.
+- Keep docs concise but authoritative.
+- Favor behavior-level explanations over file inventories unless file specificity prevents mistakes.
+- Explicitly note drift when counts, versions, commands, or capabilities differ across root README, package READMEs, code, tests, and historical docs.
+
+Validation phase after writing:
+12. Spawn `Explorer-Coverage-Audit`:
+- Read the new docs only plus manifests/package inventories.
+- Verify all required repo areas, packages, plugins, and legacy subsystems are covered.
+- Report coverage gaps only.
+13. Spawn `Explorer-Link-Audit`:
+- Verify all relative links inside the new docs resolve.
+- Specifically verify the new `v3/docs/*` bridge pages satisfy the broken links from `v3/README.md`.
+- Report broken links only.
+14. Main agent then fixes any issues from both audits.
+15. Perform a final review pass on the full diff with a code-review mindset:
+- Look for missing coverage
+- Inaccurate claims
+- Link errors
+- Internal inconsistencies
+- Places where docs still lean on stale README marketing rather than code truth
+
+Acceptance criteria:
+- A fully fresh documentation corpus exists under `docs/architecture/` plus `docs/README.md`.
+- `docs/modules/` is untouched.
+- The three `v3/docs/*` bridge pages exist and resolve the broken `v3/README.md` links.
+- The docs alone can answer:
+  - What Claude Flow is
+  - Who it is for
+  - How requests move through CLI/MCP, routing, swarm, memory, providers, hooks, and plugins
+  - How v2 and v3 differ
+  - What each major package/plugin/support area does
+  - How security, testing, operations, and deployment fit together
+- Drift between implementation and older docs is called out explicitly.
+- Final response includes:
+  - What was created
+  - What was validated
+  - Any residual risks or unresolved ambiguities
+
+Start with a short non-mutating recon pass, then immediately delegate. Keep your own context small by relying on sub-agent outputs instead of re-reading the entire repo yourself.
+```
