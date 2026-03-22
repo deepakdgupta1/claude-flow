@@ -14,7 +14,7 @@ Hard constraints:
 - When docs and implementation disagree, implementation wins and the docs must call out the drift explicitly.
 - The new corpus must stand on its own and be diff-friendly against `docs/modules/` later.
 
-Primary output locations:
+Below are a few examples of primary output locations. However, please feel free to revise the below and add more or modify the ones below if and as needed:
 - `docs/README.md`
 - `docs/architecture/README.md`
 - `docs/architecture/repository-map.md`
@@ -32,14 +32,14 @@ Required compatibility bridge pages:
 - `v3/docs/implementation/README.md`
 
 Known repo facts you should verify early:
-- Root package publishes the v3 CLI via `package.json` pointing at `v3/@claude-flow/cli/bin/cli.js`.
-- The repo spans root, `v2`, `v3`, `v3/@claude-flow/*`, `v3/plugins/*`, `.claude`, `.claude-plugin`, `plugin/`, `.github`, `.githooks`, `tests/docker-regression`, and `docs/ruvector-postgres`.
+- Root package publishes the v3 CLI via `package.json` pointing at `v3/@claude-flow/cli/bin/cli.js`, and is now branded as "RuFlo V3.5" alongside "Claude Flow".
+- The repo spans root, `v2`, `v3`, `v3/@claude-flow/*`, `v3/plugins/*`, `ruflo/`, `.claude`, `.claude-plugin`, `plugin/`, `.github`, `.githooks`, `tests/docker-regression`, and `docs/ruvector-postgres`.
 - `v3/README.md` currently links to missing `v3/docs/README.md`, `v3/docs/guides/`, and `v3/docs/implementation/`.
 - `docs/modules/` may already exist in the worktree; ignore it completely.
 
 Documentation design requirements:
 - `docs/README.md` is the repo-level entrypoint.
-- `docs/architecture/README.md` is the master narrative covering what Claude Flow is, target use cases, architecture layers, request lifecycle, and how to navigate the corpus.
+- `docs/architecture/README.md` is the master narrative covering what Claude Flow (now RuFlo V3.5) is, target use cases, architecture layers, request lifecycle, and how to navigate the corpus.
 - Each technical document must use this schema:
   - Purpose
   - Status
@@ -68,7 +68,7 @@ Recommended agent structure:
 
 Phase 1: Read-only inventory via explorers
 1. Spawn `Explorer-V3` with a narrow brief:
-   - Inventory `v3/@claude-flow/*`, `v3/plugins/*`, `v3/src`, `v3/index.ts`, `v3/package.json`, `v3/pnpm-workspace.yaml`, `v3/README.md`, `v3/implementation/adrs/*`.
+   - Inventory `v3/@claude-flow/*`, `v3/plugins/*`, `v3/src`, `v3/index.ts`, `v3/package.json`, `v3/pnpm-workspace.yaml`, `v3/README.md`, `v3/implementation/adrs/*`, and the new `ruflo/` directory.
    - Produce a compact summary of packages, plugins, key entrypoints, and broken `v3/docs/*` links.
    - Do not write files.
 2. Spawn `Explorer-V2` with a narrow brief:
@@ -83,15 +83,15 @@ Phase 1: Read-only inventory via explorers
 Phase 2: Writing via workers with disjoint ownership
 4. Spawn `Worker-V3-Core` with ownership of:
    - `docs/architecture/v3-core-runtime.md`
-   - Source focus: `shared`, `swarm`, `memory`, `integration`, `neural`, `v3/index.ts`, `v3/src`
+   - Source focus: `shared`, `swarm` (including real BFT/Raft/Quorum consensus), `memory` (including real SONA RL & EWC++), `integration`, `neural`, `v3/index.ts`, `v3/src`, and `ruvector` WASM semantic embeddings
    - Do not touch any other files.
 5. Spawn `Worker-V3-Surfaces` with ownership of:
    - `docs/architecture/v3-surfaces-and-operations.md`
-   - Source focus: `cli`, `mcp`, `hooks`, `providers`, `embeddings`, `browser`, `testing`, `performance`, `deployment`
+   - Source focus: `cli`, `mcp` (now over 250 tools), `hooks`, `providers`, `embeddings`, `browser`, `testing`, `performance`, `deployment`, and the `ruflo/` suite
    - Do not touch any other files.
 6. Spawn `Worker-V3-Security` with ownership of:
    - `docs/architecture/v3-security-governance.md`
-   - Source focus: `security`, `aidefence`, `claims`, execution controls, governance/security posture
+   - Source focus: `security` (including ADR-061 deep audit findings & urlSafety), `aidefence`, `claims`, execution controls, governance/security posture
    - Do not touch any other files.
 7. Spawn `Worker-V3-Plugins` with ownership of:
    - `docs/architecture/v3-plugin-ecosystem.md`
@@ -164,7 +164,7 @@ Acceptance criteria:
 - `docs/modules/` is untouched.
 - The three `v3/docs/*` bridge pages exist and resolve the broken `v3/README.md` links.
 - The docs alone can answer:
-  - What Claude Flow is
+  - What Claude Flow / RuFlo V3.5 is
   - Who it is for
   - How requests move through CLI/MCP, routing, swarm, memory, providers, hooks, and plugins
   - How v2 and v3 differ
