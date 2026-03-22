@@ -1,6 +1,5 @@
 Paste this into the fresh thread:
 
-```text
 You are working in `/home/deeog/Desktop/claude-flow`.
 
 Your task is to create a fresh, ground-up documentation corpus for this repository without relying on the existing `docs/modules/` version. This is a large-scope documentation exercise, so you must aggressively use sub-agents to keep context windows small and focused. Do not try to hold the whole repo in one agent’s context.
@@ -9,7 +8,7 @@ Hard constraints:
 - Treat `docs/modules/` as a parallel documentation version to ignore.
 - Do not read from `docs/modules/` as source material.
 - Do not edit, delete, move, or link to `docs/modules/`.
-- If `docs/modules/` contains untracked files, leave them untouched.
+- `docs/modules/` is now a tracked repo artifact rather than an untracked anomaly; leave it fully untouched.
 - Build the new corpus from code, tests, manifests, ADRs, package READMEs, and historical docs outside `docs/modules/`.
 - When docs and implementation disagree, implementation wins and the docs must call out the drift explicitly.
 - The new corpus must stand on its own and be diff-friendly against `docs/modules/` later.
@@ -20,8 +19,10 @@ Below are a few examples of primary output locations. However, please feel free 
 - `docs/architecture/repository-map.md`
 - `docs/architecture/v3-core-runtime.md`
 - `docs/architecture/v3-surfaces-and-operations.md`
+- `docs/architecture/guidance-control-plane.md`
 - `docs/architecture/v3-security-governance.md`
 - `docs/architecture/v3-plugin-ecosystem.md`
+- `docs/architecture/ruflo-runtime-and-appliance.md`
 - `docs/architecture/v2-legacy-architecture.md`
 - `docs/architecture/version-evolution-and-migration.md`
 - `docs/architecture/auxiliary-assets-and-harnesses.md`
@@ -32,14 +33,20 @@ Required compatibility bridge pages:
 - `v3/docs/implementation/README.md`
 
 Known repo facts you should verify early:
-- Root package publishes the v3 CLI via `package.json` pointing at `v3/@claude-flow/cli/bin/cli.js`, and is now branded as "RuFlo V3.5" alongside "Claude Flow".
-- The repo spans root, `v2`, `v3`, `v3/@claude-flow/*`, `v3/plugins/*`, `ruflo/`, `.claude`, `.claude-plugin`, `plugin/`, `.github`, `.githooks`, `tests/docker-regression`, and `docs/ruvector-postgres`.
-- `v3/README.md` currently links to missing `v3/docs/README.md`, `v3/docs/guides/`, and `v3/docs/implementation/`.
-- `docs/modules/` may already exist in the worktree; ignore it completely.
+- Root package is currently `claude-flow@3.5.42`.
+- Root `bin/cli.js` is an umbrella wrapper that imports `v3/@claude-flow/cli/bin/cli.js`; do not describe root packaging as if the bin points there directly without the wrapper.
+- `ruflo/` is now a first-class package surface with `ruflo@3.5.42`.
+- Root README is heavily Ruflo-branded, while many `v3/@claude-flow/*` packages remain alpha-versioned and scoped; this naming/version drift must be documented explicitly.
+- `v3/@claude-flow/` currently contains 21 scoped packages.
+- `v3/plugins/` currently contains 15 shipped plugins.
+- `@claude-flow/guidance` is now a first-class package with `src`, `tests`, `docs/adrs/ADR-G001` through `ADR-G026`, and a `wasm-kernel` / `wasm-pkg` surface.
+- `ruflo/` contains product/runtime surfaces including `chat-ui`, `mcp-bridge`, `ruvocal`, `nginx`, Docker packaging, and RVF packaging scripts.
+- `v3/README.md` still links to missing `v3/docs/README.md`, `v3/docs/guides/`, and `v3/docs/implementation/`.
+- `docs/modules/` and `docs/prompt.txt` already exist in the repo; ignore `docs/modules/` as source material.
 
 Documentation design requirements:
 - `docs/README.md` is the repo-level entrypoint.
-- `docs/architecture/README.md` is the master narrative covering what Claude Flow (now RuFlo V3.5) is, target use cases, architecture layers, request lifecycle, and how to navigate the corpus.
+- `docs/architecture/README.md` is the master narrative covering what Claude Flow / Ruflo is, target use cases, architecture layers, request lifecycle, naming/versioning context, and how to navigate the corpus.
 - Each technical document must use this schema:
   - Purpose
   - Status
@@ -67,48 +74,60 @@ Very important delegation requirement:
 Recommended agent structure:
 
 Phase 1: Read-only inventory via explorers
-1. Spawn `Explorer-V3` with a narrow brief:
-   - Inventory `v3/@claude-flow/*`, `v3/plugins/*`, `v3/src`, `v3/index.ts`, `v3/package.json`, `v3/pnpm-workspace.yaml`, `v3/README.md`, `v3/implementation/adrs/*`, and the new `ruflo/` directory.
-   - Produce a compact summary of packages, plugins, key entrypoints, and broken `v3/docs/*` links.
+1. Spawn `Explorer-V3-Packages` with a narrow brief:
+   - Inventory all `v3/@claude-flow/*` packages, `v3/src`, `v3/package.json`, `v3/pnpm-workspace.yaml`, `v3/README.md`, and `v3/implementation/adrs/*`.
+   - Produce a compact summary of all 21 scoped packages, key entrypoints, major runtime boundaries, broken `v3/docs/*` links, and notable post-2026-01-26 ADRs.
    - Do not write files.
-2. Spawn `Explorer-V2` with a narrow brief:
+2. Spawn `Explorer-Guidance-Ruflo` with a narrow brief:
+   - Inventory `v3/@claude-flow/guidance/**`, `v3/@claude-flow/guidance/docs/adrs/*`, `ruflo/**`, root README naming/version drift, and RVF/appliance-related ADRs.
+   - Produce a compact summary of the guidance control plane, WASM kernel, proof/gate/evolution model, Ruflo runtime surfaces, chat UI, MCP bridge, appliance flow, and branding/version drift.
+   - Do not write files.
+3. Spawn `Explorer-V2` with a narrow brief:
    - Inventory `v2/src`, `v2/package.json`, `v2/README.md`, `v2/docs/architecture/*`, `v2/src/mcp/*`, `v2/src/swarm/*`, `v2/src/providers/*`, `v2/src/verification/*`, `v2/src/migration/*`.
    - Produce a compact summary of major legacy subsystems and migration-relevant facts.
    - Do not write files.
-3. Spawn `Explorer-Support` with a narrow brief:
-   - Inventory `.claude`, `.claude-plugin`, `plugin/`, `agents/`, `.github`, `.githooks`, `scripts/`, `tests/docker-regression`, `docs/ruvector-postgres`.
-   - Produce a compact summary of support/operational assets and their roles.
+4. Spawn `Explorer-Support` with a narrow brief:
+   - Inventory `.claude`, `.claude-plugin`, `plugin/`, `agents/`, `.github`, `.githooks`, root scripts, `tests/docker-regression`, and `docs/ruvector-postgres`.
+   - Produce a compact summary of support and operational assets and their roles.
    - Do not write files.
 
 Phase 2: Writing via workers with disjoint ownership
-4. Spawn `Worker-V3-Core` with ownership of:
+5. Spawn `Worker-V3-Core` with ownership of:
    - `docs/architecture/v3-core-runtime.md`
-   - Source focus: `shared`, `swarm` (including real BFT/Raft/Quorum consensus), `memory` (including real SONA RL & EWC++), `integration`, `neural`, `v3/index.ts`, `v3/src`, and `ruvector` WASM semantic embeddings
+   - Source focus: `shared`, `swarm`, `memory`, `integration`, `neural`, `agents`, `codex`, `v3/index.ts`, and `v3/src`
    - Do not touch any other files.
-5. Spawn `Worker-V3-Surfaces` with ownership of:
+6. Spawn `Worker-V3-Surfaces` with ownership of:
    - `docs/architecture/v3-surfaces-and-operations.md`
-   - Source focus: `cli`, `mcp` (now over 250 tools), `hooks`, `providers`, `embeddings`, `browser`, `testing`, `performance`, `deployment`, and the `ruflo/` suite
+   - Source focus: `cli`, `mcp`, `hooks`, `providers`, `embeddings`, `browser`, `testing`, `performance`, `deployment`, plus current operational surfaces such as `doctor`, `statusline`, `init/settings`, `migrate`, `ruvector`, and controller-facing MCP tools
    - Do not touch any other files.
-6. Spawn `Worker-V3-Security` with ownership of:
+7. Spawn `Worker-Guidance` with ownership of:
+   - `docs/architecture/guidance-control-plane.md`
+   - Source focus: `@claude-flow/guidance`, ADR-G001 through ADR-G026, `wasm-kernel`, proof chain, gates, truth/trust/uncertainty/temporal systems, and integration with hooks/memory/security
+   - Do not touch any other files.
+8. Spawn `Worker-V3-Security` with ownership of:
    - `docs/architecture/v3-security-governance.md`
-   - Source focus: `security` (including ADR-061 deep audit findings & urlSafety), `aidefence`, `claims`, execution controls, governance/security posture
+   - Source focus: `security`, `aidefence`, `claims`, recent security remediations, governance posture, and the boundary with guidance enforcement
    - Do not touch any other files.
-7. Spawn `Worker-V3-Plugins` with ownership of:
+9. Spawn `Worker-V3-Plugins` with ownership of:
    - `docs/architecture/v3-plugin-ecosystem.md`
    - Source focus: `@claude-flow/plugins` SDK plus all shipped `v3/plugins/*`
-   - Group plugins by function/domain rather than writing a huge unstructured list.
+   - Group plugins by function and domain rather than writing a huge unstructured list.
    - Do not touch any other files.
-8. Spawn `Worker-V2-Legacy` with ownership of:
+10. Spawn `Worker-Ruflo` with ownership of:
+   - `docs/architecture/ruflo-runtime-and-appliance.md`
+   - Source focus: `ruflo/`, chat UI, `mcp-bridge`, `ruvocal`, nginx/static assets, Docker packaging, RVF packaging, and the relationship between Ruflo and the underlying Claude Flow packages
+   - Do not touch any other files.
+11. Spawn `Worker-V2-Legacy` with ownership of:
    - `docs/architecture/v2-legacy-architecture.md`
    - Source focus: v2 core/orchestration, CLI, MCP, swarm/hive-mind, providers, memory/reasoningbank/AgentDB, verification, enterprise, migration
    - Do not touch any other files.
-9. Spawn `Worker-Support` with ownership of:
+12. Spawn `Worker-Support` with ownership of:
    - `docs/architecture/auxiliary-assets-and-harnesses.md`
-   - Source focus: `.claude`, `.claude-plugin`, `plugin/`, root `agents/`, `.github`, `.githooks`, root scripts, `tests/docker-regression`, `docs/ruvector-postgres`
+   - Source focus: `.claude`, `.claude-plugin`, `plugin/`, root `agents/`, `.github`, `.githooks`, root scripts, `tests/docker-regression`, `docs/ruvector-postgres`, and repo-level support assets
    - Do not touch any other files.
 
 Phase 3: Main-agent integration and top-level docs
-10. The main agent owns:
+13. The main agent owns:
 - `docs/README.md`
 - `docs/architecture/README.md`
 - `docs/architecture/repository-map.md`
@@ -117,11 +136,11 @@ Phase 3: Main-agent integration and top-level docs
 - `v3/docs/guides/README.md`
 - `v3/docs/implementation/README.md`
 
-11. Main-agent responsibilities:
+14. Main-agent responsibilities:
 - Synthesize explorer outputs and worker drafts.
 - Create the top-level navigation and master narrative.
 - Build the repository-wide coverage matrix.
-- Write the version-evolution/migration doc.
+- Write the version-evolution and migration doc with explicit coverage of material changes from 2026-01-27 through 2026-03-21.
 - Create the three `v3/docs/*` bridge pages so current `v3/README.md` links stop pointing at missing pages.
 - Ensure the fresh corpus never references `docs/modules/`.
 
@@ -130,7 +149,9 @@ Coverage requirements:
 - Every `v3/@claude-flow/*` package must appear in at least one table.
 - Every shipped `v3/plugins/*` plugin must appear in at least one table.
 - Every major `v2/src` subsystem must appear in at least one table.
-- Support assets and operational surfaces must be covered: `.claude`, `.claude-plugin`, `plugin/`, `agents/`, `.github`, `.githooks`, `scripts/`, `tests/docker-regression`, `docs/ruvector-postgres`.
+- `ruflo/` must be covered as a first-class runtime and packaging surface.
+- The guidance control plane must be covered as a first-class subsystem, not folded away into generic security notes.
+- Support assets and operational surfaces must be covered: `.claude`, `.claude-plugin`, `plugin/`, `agents/`, `.github`, `.githooks`, root scripts, `tests/docker-regression`, `docs/ruvector-postgres`.
 
 Working rules:
 - Prefer `rg` for search and `find` for inventory.
@@ -140,19 +161,23 @@ Working rules:
 - Use `apply_patch` for all manual edits.
 - Keep docs concise but authoritative.
 - Favor behavior-level explanations over file inventories unless file specificity prevents mistakes.
-- Explicitly note drift when counts, versions, commands, or capabilities differ across root README, package READMEs, code, tests, and historical docs.
+- Explicitly note drift when counts, versions, commands, names, or capabilities differ across root README, package READMEs, manifests, code, tests, and historical docs.
+- Do not blindly trust README claims such as MCP tool counts or performance numbers; verify where feasible and label unverified claims where necessary.
 
-Validation phase after writing:
-12. Spawn `Explorer-Coverage-Audit`:
-- Read the new docs only plus manifests/package inventories.
-- Verify all required repo areas, packages, plugins, and legacy subsystems are covered.
+Validation phase after writing
+15. Spawn `Explorer-Coverage-Audit`:
+- Read the new docs only plus manifests and package inventories.
+- Verify all required repo areas, packages, plugins, Ruflo surfaces, guidance surfaces, and legacy subsystems are covered.
 - Report coverage gaps only.
-13. Spawn `Explorer-Link-Audit`:
+16. Spawn `Explorer-Link-Audit`:
 - Verify all relative links inside the new docs resolve.
 - Specifically verify the new `v3/docs/*` bridge pages satisfy the broken links from `v3/README.md`.
 - Report broken links only.
-14. Main agent then fixes any issues from both audits.
-15. Perform a final review pass on the full diff with a code-review mindset:
+17. Spawn `Explorer-Drift-Audit`:
+- Check that the docs explicitly call out major naming/version drift, including `claude-flow` vs `ruflo`, stable root packages vs alpha scoped packages, and any code-vs-README capability mismatches found during the audit.
+- Report drift omissions only.
+18. Main agent then fixes any issues from all audits.
+19. Perform a final review pass on the full diff with a code-review mindset:
 - Look for missing coverage
 - Inaccurate claims
 - Link errors
@@ -164,12 +189,14 @@ Acceptance criteria:
 - `docs/modules/` is untouched.
 - The three `v3/docs/*` bridge pages exist and resolve the broken `v3/README.md` links.
 - The docs alone can answer:
-  - What Claude Flow / RuFlo V3.5 is
+  - What Claude Flow / Ruflo is
+  - How the naming and packaging surfaces relate
   - Who it is for
-  - How requests move through CLI/MCP, routing, swarm, memory, providers, hooks, and plugins
+  - How requests move through CLI, MCP, routing, swarm, memory, providers, hooks, guidance, and plugins
   - How v2 and v3 differ
-  - What each major package/plugin/support area does
-  - How security, testing, operations, and deployment fit together
+  - What each major package, plugin, Ruflo runtime area, and support surface does
+  - How guidance, security, testing, operations, and deployment fit together
+  - What changed materially after 2026-01-26 and why it matters architecturally
 - Drift between implementation and older docs is called out explicitly.
 - Final response includes:
   - What was created
@@ -177,4 +204,3 @@ Acceptance criteria:
   - Any residual risks or unresolved ambiguities
 
 Start with a short non-mutating recon pass, then immediately delegate. Keep your own context small by relying on sub-agent outputs instead of re-reading the entire repo yourself.
-```
